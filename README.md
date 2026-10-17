@@ -95,8 +95,7 @@ Spring Security (weak on purpose) · Bootstrap 5 (bundled locally) · Maven
 DevSecOps-project/
 ├── pom.xml                       Maven configuration
 ├── docs/
-│   ├── ARCHITECTURE.md           How the application is built
-│   └── INSTRUCTOR_NOTES.md       List of the weaknesses (private, see below)
+│   └── INSTRUCTOR_NOTES.md       List of the weaknesses
 └── src/main/
     ├── java/com/devsecops/project/
     │   ├── config/               Security, web settings, sample data
