@@ -4,6 +4,7 @@ pipeline {
     environment {
         DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials')
         SONAR_TOKEN = credentials('sonarqube-token')
+        DOCKER_IMAGE = 'opssaad/devsecops:latest'
     }
 
     stages {
@@ -13,17 +14,12 @@ pipeline {
             }
         }
 
-        // 1. Build Maven (كيخرج الـ .jar و target/classes)
-        stage('Build Java Backend') {
+        stage('Build Java Application') {
             steps {
-                sh 'chmod +x mvnw || true'
-                sh 'rm -rf target/*.jar'
-                // إذا كان عندك mvnw خدم بيه، ولا خدم بـ mvn العادي:
                 sh 'mvn clean package -DskipTests'
             }
         }
 
-        // 2. SonarQube Analysis
         stage('SonarQube Analysis') {
             steps {
                 script {
@@ -32,11 +28,12 @@ pipeline {
                     withSonarQubeEnv('SonarQube') {
                         sh """
                             ${scannerHome}/bin/sonar-scanner \
-                            -Dsonar.projectKey=my-app-swapily \
+                            -Dsonar.projectKey=devsecops \
+                            -Dsonar.projectName=devsecops \
                             -Dsonar.sources=src \
                             -Dsonar.java.binaries=target/classes \
                             -Dsonar.host.url=http://sonarqube:9000 \
-                            -Dsonar.token=\$SONAR_TOKEN
+                            -Dsonar.token=${SONAR_TOKEN}
                         """
                     }
                 }
@@ -55,21 +52,26 @@ pipeline {
             }
         }
 
-        // 3. Build Docker Image
-        stage('Build Docker Images') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    sh 'docker build -t opssaad/devsecops:latest .'
+                    sh "docker build -t ${DOCKER_IMAGE} ."
                 }
             }
         }
 
-        // 4. Push to Docker Hub
-        stage('Push to Docker Hub') {
+        stage('Login to Docker Hub') {
             steps {
                 script {
                     sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
-                    sh 'docker push opssaad/devsecops:latest'
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    sh "docker push ${DOCKER_IMAGE}"
                 }
             }
         }
@@ -77,7 +79,15 @@ pipeline {
 
     post {
         always {
-            sh 'docker logout'
+            sh 'docker logout || true'
+        }
+
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+
+        failure {
+            echo 'Pipeline failed.'
         }
     }
 }
