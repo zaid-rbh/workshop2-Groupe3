@@ -13,15 +13,6 @@ pipeline {
                 checkout scm
             }
         }
-
-        stage('Build Java Application') {
-            steps {
-             sh 'chmod +x mvnw'
-             sh 'rm -rf target/*.jar'
-             sh './mvnw clean package -DskipTests'
-            }
-        }
-
         stage('SonarQube Analysis') {
             steps {
                 script {
@@ -54,6 +45,14 @@ pipeline {
             }
         }
 
+       stage('Build Java Application') {
+            steps {
+             sh 'chmod +x mvnw'
+             sh 'rm -rf target/*.jar'
+             sh './mvnw clean package -DskipTests'
+            }
+        }
+        
         stage('Build Docker Image') {
             steps {
                 script {
