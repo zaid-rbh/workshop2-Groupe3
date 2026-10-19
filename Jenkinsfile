@@ -32,21 +32,19 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis (SAST)') {
+        stage('SonarQube Analysis') {
             steps {
                 script {
-                    // جلب المسار الصحيح للأداة المعرفة في Jenkins Tools
-                    def scannerHome = tool 'SonarQubeScanner'
-
                     withSonarQubeEnv('SonarQube') {
-                        sh """
-                            ${scannerHome}/bin/sonar-scanner \
+                        sh '''
+                            sonar-scanner \
                             -Dsonar.projectKey=devsecops \
                             -Dsonar.projectName=DevSecOps-VulnerableShop \
                             -Dsonar.sources=src/main/java \
                             -Dsonar.java.binaries=target/classes \
-                            -Dsonar.java.coveragePlugin=none
-                        """
+                            -Dsonar.java.coveragePlugin=none \
+                            -Dsonar.host.url=http://sonarqube:9000
+                        '''
                     }
                 }
             }
