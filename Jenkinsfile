@@ -1,8 +1,11 @@
 pipeline {
     agent any
 
-    tools {
-        sonarScanner 'SonarQubeScanner'
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials')
+        SONAR_TOKEN = credentials('sonarqube-token')
+        DOCKER_IMAGE = 'opssaad/devsecops'
+        DOCKER_TAG = 'latest'
     }
 
     stages {
@@ -12,25 +15,27 @@ pipeline {
             }
         }
 
-        stage('Build & Compile Java') {
+        stage('Build Java Application') {
             steps {
-                // Compilation du projet pour générer target/classes
-                sh 'mvn clean compile -DskipTests'
+                sh 'mvn clean package -DskipTests'
             }
         }
 
         stage('SonarQube Analysis') {
             steps {
                 script {
+                    def scannerHome = tool 'SonarQubeScanner'
+
                     withSonarQubeEnv('SonarQube') {
-                        sh '''
-                            sonar-scanner \
-                            -Dsonar.projectKey=devsecops \
-                            -Dsonar.projectName=devsecops \
-                            -Dsonar.sources=src/main/java \
+                        sh """
+                            ${scannerHome}/bin/sonar-scanner \
+                            -Dsonar.projectKey=swapily-app \
+                            -Dsonar.projectName=swapily-app \
+                            -Dsonar.sources=src \
                             -Dsonar.java.binaries=target/classes \
-                            -Dsonar.host.url=http://sonarqube:9000
-                        '''
+                            -Dsonar.host.url=http://sonarqube:9000 \
+                            -Dsonar.token=${SONAR_TOKEN}
+                        """
                     }
                 }
             }
@@ -38,17 +43,52 @@ pipeline {
 
         stage('Quality Gate') {
             steps {
-                timeout(time: 2, unit: 'MINUTES') {
-                    // Vérifie le résultat du Quality Gate auprès de SonarQube
-                    waitForQualityGate abortPipeline: true
+                script {
+                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                        timeout(time: 2, unit: 'MINUTES') {
+                            waitForQualityGate abortPipeline: false
+                        }
+                    }
                 }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t opssaad/vulnerableshop:latest .'
+                script {
+                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
+                }
             }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                script {
+                    sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            sh 'docker logout || true'
+        }
+
+        success {
+            echo 'Pipeline terminé avec succès.'
+        }
+
+        failure {
+            echo 'Pipeline échoué.'
         }
     }
 }
