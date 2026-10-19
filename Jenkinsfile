@@ -37,7 +37,8 @@ pipeline {
                 script {
                     withSonarQubeEnv('SonarQube') {
                         sh '''
-                            sonar-scanner \
+                            export SONAR_HOST_URL="http://sonarqube:9000"
+                            /var/jenkins_home/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarQubeScanner/bin/sonar-scanner \
                             -Dsonar.host.url=http://sonarqube:9000 \
                             -Dsonar.projectKey=devsecops \
                             -Dsonar.projectName=DevSecOps-VulnerableShop \
