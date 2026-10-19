@@ -38,12 +38,12 @@ pipeline {
                     withSonarQubeEnv('SonarQube') {
                         sh '''
                             sonar-scanner \
+                            -Dsonar.host.url=http://sonarqube:9000 \
                             -Dsonar.projectKey=devsecops \
                             -Dsonar.projectName=DevSecOps-VulnerableShop \
                             -Dsonar.sources=src/main/java \
                             -Dsonar.java.binaries=target/classes \
-                            -Dsonar.java.coveragePlugin=none \
-                            -Dsonar.host.url=http://sonarqube:9000
+                            -Dsonar.java.coveragePlugin=none
                         '''
                     }
                 }
