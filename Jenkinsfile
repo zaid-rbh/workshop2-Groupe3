@@ -20,7 +20,7 @@ pipeline {
         stage('Build & Test') {
             steps {
                 script {
-                    def mavenHome = tool 'Maven'
+                    def mavenHome = tool 'Maven3'
                     sh "${mavenHome}/bin/mvn -B clean package"
                 }
             }
