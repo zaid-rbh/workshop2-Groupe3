@@ -16,9 +16,9 @@ pipeline {
 
         stage('Build Java Application') {
             steps {
-                sh 'chmod +x mvnw'
-
-                sh './mvnw clean package -DskipTests'
+             sh 'chmod +x mvnw'
+             sh 'rm -rf target/*.jar'
+             sh './mvnw clean package -DskipTests'
             }
         }
 
