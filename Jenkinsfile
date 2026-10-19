@@ -14,6 +14,12 @@ pipeline {
             }
         }
 
+        stage('Build Java Application') {
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+
     stage('SonarQube Analysis') {
         steps {
             script {
@@ -44,12 +50,6 @@ pipeline {
                         }
                     }
                 }
-            }
-        }
-
-        stage('Build Java Application') {
-            steps {
-                sh 'mvn clean package -DskipTests'
             }
         }
 
