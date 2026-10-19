@@ -1,9 +1,9 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials')
-        SONAR_TOKEN = credentials('sonarqube-token')
+    tools {
+        maven 'Maven3'                             // تأكد من الاسم في Manage Jenkins -> Tools
+        sonarRunnerInstallation 'SonarQubeScanner' // تأكد من الاسم في Manage Jenkins -> Tools
     }
 
     stages {
@@ -13,21 +13,40 @@ pipeline {
             }
         }
 
-    stage('SonarQube Analysis') {docker-hub-credentials
-        steps {
-            script {
-                def scannerHome = tool 'SonarQubeScanner'
+        stage('Build & Compile Java') {
+            steps {
+                sh 'mvn clean compile -DskipTests'
+            }
+        }
 
-                withSonarQubeEnv('SonarQube') {
-                    sh """
-                        ${scannerHome}/bin/sonar-scanner \
-                        -Dsonar.projectKey=my-app-swapily \
-                        -Dsonar.sources=./src/main
-                        -Dsonar.java.binaries=. \
-                        -Dsonar.host.url=http://sonarqube:9000 \
-                        -Dsonar.token=${SONAR_TOKEN}
-                    """
+        stage('SonarQube Analysis') {
+            steps {
+                script {
+                    withSonarQubeEnv('SonarQube') {
+                        sh '''
+                            sonar-scanner \
+                            -Dsonar.projectKey=swapily-app \
+                            -Dsonar.projectName=swapily-app \
+                            -Dsonar.sources=src/main/java \
+                            -Dsonar.java.binaries=target/classes \
+                            -Dsonar.host.url=http://sonarqube:9000
+                        '''
+                    }
                 }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t opssaad/vulnerableshop:latest .'
             }
         }
     }
