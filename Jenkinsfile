@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials') // ID الخاص بحساب DockerHub في Jenkins
         SONAR_TOKEN = credentials('sonarqube-token')
     }
 
