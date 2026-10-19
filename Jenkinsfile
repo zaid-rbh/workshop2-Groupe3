@@ -1,11 +1,9 @@
 pipeline {
     agent any
 
-    environment {
-        DOCKERHUB_CREDENTIALS = credentials('docker-hub-credentials')
-        SONAR_TOKEN = credentials('sonarqube-token')
-        DOCKER_IMAGE = 'opssaad/devsecops'
-        DOCKER_TAG = 'latest'
+    tools {
+        maven 'Maven3'                  // تأكد من مطابقة الاسم في Manage Jenkins -> Tools
+        sonarScanner 'SonarQubeScanner' // تأكد من مطابقة الاسم في Manage Jenkins -> Tools
     }
 
     stages {
@@ -15,21 +13,25 @@ pipeline {
             }
         }
 
+        stage('Build & Compile Java') {
+            steps {
+                // تجميع المشروع وإنشاء target/classes قبل مرحلة السكنر
+                sh 'mvn clean compile -DskipTests'
+            }
+        }
+
         stage('SonarQube Analysis') {
             steps {
                 script {
-                    def scannerHome = tool 'SonarQubeScanner'
-
                     withSonarQubeEnv('SonarQube') {
-                        sh """
-                            ${scannerHome}/bin/sonar-scanner \
+                        sh '''
+                            sonar-scanner \
                             -Dsonar.projectKey=swapily-app \
                             -Dsonar.projectName=swapily-app \
-                            -Dsonar.sources=src \
+                            -Dsonar.sources=src/main/java \
                             -Dsonar.java.binaries=target/classes \
-                            -Dsonar.host.url=http://sonarqube:9000 \
-                            -Dsonar.token=${SONAR_TOKEN}
-                        """
+                            -Dsonar.host.url=http://sonarqube:9000
+                        '''
                     }
                 }
             }
@@ -37,36 +39,25 @@ pipeline {
 
         stage('Quality Gate') {
             steps {
-                script {
-                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                        timeout(time: 2, unit: 'MINUTES') {
-                            waitForQualityGate abortPipeline: false
-                        }
-                    }
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh "docker build -t ${DOCKER_IMAGE}:${DOCKER_TAG} ."
-                }
-            }
-        }
-
-        stage('Login to Docker Hub') {
-            steps {
-                script {
-                    sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin'
-                }
+                sh 'docker build -t opssaad/vulnerableshop:latest .'
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                script {
-                    sh "docker push ${DOCKER_IMAGE}:${DOCKER_TAG}"
+                withCredentials([usernamePassword(credentialsId: 'docker-credentials-id', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+                        docker push opssaad/vulnerableshop:latest
+                    '''
                 }
             }
         }
@@ -74,15 +65,7 @@ pipeline {
 
     post {
         always {
-            sh 'docker logout || true'
-        }
-
-        success {
-            echo 'Pipeline terminé avec succès.'
-        }
-
-        failure {
-            echo 'Pipeline échoué.'
+            sh 'docker logout'
         }
     }
 }
