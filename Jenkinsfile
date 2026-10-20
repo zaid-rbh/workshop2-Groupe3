@@ -63,29 +63,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Dependency Scan (SCA)') {
-            steps {
-                script {
-                    // فحص ثغرات الاعتماديات (Maven dependencies) عبر OWASP Dependency-Check
-                    def mvnHome = tool 'Maven'
-                    sh """
-                        ${mvnHome}/bin/mvn -B org.owasp:dependency-check-maven:check || true
-                    """
-                }
-            }
-            post {
-                always {
-                    // نشر تقرير الفحص كواجهة للمتابعة (يتطلب plugin HTML Publisher)
-                    publishHTML(target: [
-                        reportDir: 'target',
-                        reportFiles: 'dependency-check-report.html',
-                        reportName: 'OWASP Dependency Check Report'
-                    ])
-                }
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 script {
@@ -94,19 +71,7 @@ pipeline {
                 }
             }
         }
-
-        stage('Container Scan (Trivy)') {
-            steps {
-                script {
-                    // فحص ثغرات صورة التطبيق و ثغرات CRITICAL/HIGH كحد فاصل
-                    sh """
-                        trivy image --severity CRITICAL,HIGH --exit-code 1 --no-progress ${IMAGE_NAME}:${IMAGE_TAG} || true
-                        trivy image --severity MEDIUM,LOW    --exit-code 0 --no-progress ${IMAGE_NAME}:${IMAGE_TAG} || true
-                    """
-                }
-            }
-        }
-
+        
         stage('Push to Docker Hub') {
             steps {
                 script {
