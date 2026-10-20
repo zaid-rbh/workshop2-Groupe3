@@ -25,10 +25,19 @@ pipeline {
                 }
             }
         }
+    
+
+    stage('Semgrep Scan') {
+            steps {
+                sh 'semgrep scan --config p/java --config p/owasp-top-ten --metrics=off --text --output semgrep-report.txt .'
+                sh 'cat semgrep-report.txt'
+            }
+        }
     }
 
     post {
         always {
+            archiveArtifacts artifacts: 'semgrep-report.txt', allowEmptyArchive: true
             echo 'Pipeline terminé'
         }
     }
