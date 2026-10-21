@@ -37,14 +37,13 @@ public class SecurityConfig {
         };
 
         http
-            // VULNERABILITY #8: CSRF protection is disabled for the whole application.
-            .csrf(csrf -> csrf.disable())
+            // Protection CSRF activée (comportement par défaut de Spring Security).
 
             // VULNERABILITY #22: all default security headers are disabled
             // (no X-Frame-Options, no X-Content-Type-Options, no Cache-Control, no HSTS...).
             .headers(headers -> headers.disable())
 
-            // L'identifiant de session est changé après la connexion (protection contre la fixation de session).
+            // L'identifiant de session est changÃ© aprÃ¨s la connexion (protection contre la fixation de session).
             .sessionManagement(session -> session.sessionFixation(fix -> fix.changeSessionId()))
 
             .authorizeHttpRequests(auth -> auth
@@ -76,7 +75,7 @@ public class SecurityConfig {
             .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
 
-    /** Mots de passe hachés avec BCrypt (haché salé et lent). */
+    /** Mots de passe hachÃ©s avec BCrypt (hachÃ© salÃ© et lent). */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
