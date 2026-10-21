@@ -53,7 +53,7 @@ pipeline {
                     sh '''
                         docker run --rm -v $(pwd):/src returntocorp/semgrep semgrep scan \
                         --config=p/ci \
-                        --json -o semgrep-report.json || true
+                        --json -o /src/semgrep-report.json || true
                     '''
                     archiveArtifacts artifacts: 'semgrep-report.json', allowEmptyArchive: true
                 }
@@ -63,7 +63,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Dockerfile موجود في جذر المشروع
                     sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} -t ${IMAGE_NAME}:latest ."
                 }
             }
