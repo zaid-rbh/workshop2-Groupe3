@@ -52,14 +52,17 @@ pipeline {
                script {
                    sh '''
                        docker run --rm \
-                       --volumes-from jenkins \
-                       -w $(pwd) \
+                       -e SEMGREP_IN_DOCKER=1 \
+                       -v $(pwd):/src \
                        returntocorp/semgrep semgrep scan \
                        --config=p/ci \
-                       --json -o semgrep-report.json || true
+                       --json -o /src/semgrep-report.json || true
                    '''
 
+                   // Affichage du rapport dans les logs
                    sh 'cat semgrep-report.json || true'
+
+                   // Archiver le rapport dans Jenkins
                    archiveArtifacts artifacts: 'semgrep-report.json', allowEmptyArchive: true
                }
            }
