@@ -15,12 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Random;
+import java.security.SecureRandom;
 
 @Service
 public class OrderService {
 
     private static final Logger log = LoggerFactory.getLogger(OrderService.class);
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final OrderRepository orderRepository;
     private final CartItemRepository cartItemRepository;
@@ -40,8 +41,8 @@ public class OrderService {
         order.setStatus("PLACED");
         order.setShippingAddress(form.getShippingAddress());
 
-        // VULNERABILITY #19 (part): java.util.Random is predictable; it is used to build the order reference.
-        order.setOrderRef("ORD-" + (100000 + new Random().nextInt(900000)));
+        // Reference de commande generee avec SecureRandom (non predictible).
+        order.setOrderRef("ORD-" + (100000 + SECURE_RANDOM.nextInt(900000)));
 
         BigDecimal computedTotal = BigDecimal.ZERO;
         for (CartItem cartItem : cart) {

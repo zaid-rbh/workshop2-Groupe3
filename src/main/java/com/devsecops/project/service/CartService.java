@@ -41,7 +41,8 @@ public class CartService {
      */
     @Transactional
     public void addToCart(User user, Long productId, int quantity, BigDecimal clientPrice) {
-        Product product = productRepository.findById(productId).get();
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("No product with id " + productId));
         BigDecimal price = clientPrice != null ? clientPrice : product.getPrice();
 
         CartItem item = cartItemRepository.findByUserIdAndProductId(user.getId(), productId).orElse(null);
@@ -60,7 +61,8 @@ public class CartService {
     /** VULNERABILITY #10 (part): no check that the cart item belongs to the logged-in user. */
     @Transactional
     public void updateQuantity(Long cartItemId, int quantity) {
-        CartItem item = cartItemRepository.findById(cartItemId).get();
+        CartItem item = cartItemRepository.findById(cartItemId)
+                .orElseThrow(() -> new IllegalArgumentException("No cart item with id " + cartItemId));
         item.setQuantity(quantity);
         cartItemRepository.save(item);
     }

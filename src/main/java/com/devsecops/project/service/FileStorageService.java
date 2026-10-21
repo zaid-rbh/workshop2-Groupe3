@@ -1,5 +1,7 @@
 package com.devsecops.project.service;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,6 +21,8 @@ import java.util.stream.Stream;
 @Service
 public class FileStorageService {
 
+    private static final Logger log = LoggerFactory.getLogger(FileStorageService.class);
+
     private final Path root;
 
     public FileStorageService(@Value("${app.upload-dir:uploads}") String uploadDir) {
@@ -26,7 +30,7 @@ public class FileStorageService {
         try {
             Files.createDirectories(root);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Erreur de gestion des fichiers uploades", e);
         }
     }
 
@@ -45,7 +49,7 @@ public class FileStorageService {
             Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
             return name;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Erreur de gestion des fichiers uploades", e);
             return null;
         }
     }
