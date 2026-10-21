@@ -8,14 +8,12 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
-import java.util.HexFormat;
 
 /**
  * Cryptography helpers.
- * Le chiffrement utilise AES-GCM avec un IV aléatoire, et la clé vient de la variable
+ * Le chiffrement utilise AES-GCM avec un IV alÃ©atoire, et la clÃ© vient de la variable
  * d'environnement APP_AES_KEY (Base64, 16 ou 32 octets), jamais du code source.
  */
 @Service
@@ -31,26 +29,16 @@ public class CryptoService {
         String base64Key = System.getenv("APP_AES_KEY");
         if (base64Key == null || base64Key.isBlank()) {
             throw new IllegalStateException(
-                    "Variable d'environnement APP_AES_KEY manquante (clé AES en Base64, 16 ou 32 octets).");
+                    "Variable d'environnement APP_AES_KEY manquante (clÃ© AES en Base64, 16 ou 32 octets).");
         }
         byte[] keyBytes = Base64.getDecoder().decode(base64Key.trim());
         if (keyBytes.length != 16 && keyBytes.length != 32) {
-            throw new IllegalStateException("APP_AES_KEY doit contenir 16 ou 32 octets une fois décodée.");
+            throw new IllegalStateException("APP_AES_KEY doit contenir 16 ou 32 octets une fois dÃ©codÃ©e.");
         }
         this.aesKey = new SecretKeySpec(keyBytes, "AES");
     }
 
-    /** VULNERABILITY #4: MD5 is broken for passwords and no salt is used (corrigé à l'étape suivante). */
-    public String md5(String input) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("MD5");
-            return HexFormat.of().formatHex(digest.digest(input.getBytes(StandardCharsets.UTF_8)));
-        } catch (GeneralSecurityException e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
-    /** Chiffre en AES-GCM. Le résultat (Base64) contient l'IV suivi du texte chiffré. */
+    /** Chiffre en AES-GCM. Le rÃ©sultat (Base64) contient l'IV suivi du texte chiffrÃ©. */
     public String encrypt(String plainText) {
         if (plainText == null) {
             return null;

@@ -1,13 +1,13 @@
 package com.devsecops.project.config;
 
 import com.devsecops.project.repository.UserRepository;
-import com.devsecops.project.service.CryptoService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
@@ -44,8 +44,8 @@ public class SecurityConfig {
             // (no X-Frame-Options, no X-Content-Type-Options, no Cache-Control, no HSTS...).
             .headers(headers -> headers.disable())
 
-            // VULNERABILITY #7: the session id is not changed after login (session fixation).
-            .sessionManagement(session -> session.sessionFixation(fix -> fix.none()))
+            // L'identifiant de session est changé après la connexion (protection contre la fixation de session).
+            .sessionManagement(session -> session.sessionFixation(fix -> fix.changeSessionId()))
 
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(path("/cart/**"), path("/orders/**"), path("/checkout/**"),
@@ -76,19 +76,9 @@ public class SecurityConfig {
             .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
     }
 
-    /** VULNERABILITY #4: passwords are compared using unsalted MD5. */
+    /** Mots de passe hachés avec BCrypt (haché salé et lent). */
     @Bean
-    public PasswordEncoder passwordEncoder(CryptoService cryptoService) {
-        return new PasswordEncoder() {
-            @Override
-            public String encode(CharSequence rawPassword) {
-                return cryptoService.md5(rawPassword.toString());
-            }
-
-            @Override
-            public boolean matches(CharSequence rawPassword, String encodedPassword) {
-                return cryptoService.md5(rawPassword.toString()).equals(encodedPassword);
-            }
-        };
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

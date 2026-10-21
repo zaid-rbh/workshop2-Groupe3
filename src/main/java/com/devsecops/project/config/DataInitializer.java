@@ -10,6 +10,7 @@ import com.devsecops.project.repository.ProductRepository;
 import com.devsecops.project.repository.ReviewRepository;
 import com.devsecops.project.repository.UserRepository;
 import com.devsecops.project.service.CryptoService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
@@ -77,7 +78,7 @@ public class DataInitializer implements CommandLineRunner {
                             String address, String role, String card) {
         User user = new User();
         user.setUsername(username);
-        user.setPasswordHash(cryptoService.md5(rawPassword));
+        user.setPasswordHash(new BCryptPasswordEncoder().encode(rawPassword));
         user.setEmail(email);
         user.setFullName(fullName);
         user.setAddress(address);

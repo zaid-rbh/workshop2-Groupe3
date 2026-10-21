@@ -5,6 +5,7 @@ import com.devsecops.project.model.User;
 import com.devsecops.project.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,23 +16,22 @@ public class UserService {
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
 
     private final UserRepository userRepository;
-    private final CryptoService cryptoService;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, CryptoService cryptoService) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
-        this.cryptoService = cryptoService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public User register(RegisterForm form) {
-        // VULNERABILITY #20: the clear-text password is written to the application log.
-        log.info("New registration: username={}, email={}, password={}",
-                form.getUsername(), form.getEmail(), form.getPassword());
+        // Ni le mot de passe ni l'email ne sont écrits dans les logs.
+        log.info("New registration: username={}", form.getUsername());
 
         User user = new User();
         user.setUsername(form.getUsername());
         user.setEmail(form.getEmail());
         user.setFullName(form.getFullName());
-        user.setPasswordHash(cryptoService.md5(form.getPassword())); // VULNERABILITY #4 (MD5, no salt)
+        user.setPasswordHash(passwordEncoder.encode(form.getPassword()));
         user.setRole("USER");
         return userRepository.save(user);
     }
