@@ -3,10 +3,8 @@ pipeline {
 
     environment {
         SONAR_TOKEN      = credentials('sonarqube-token')
-        // سجل الدخول إلى Docker Hub باستخدام credentials name: docker-hub-credentials
         DOCKER_CREDS     = credentials('docker-hub-credentials')
         IMAGE_NAME       = 'opssaad/devsecops'
-        // وسم الصورة برقم البناء + latest لسهولة التتبع
         IMAGE_TAG        = "${BUILD_NUMBER}"
     }
 
@@ -26,7 +24,6 @@ pipeline {
             }
             post {
                 always {
-                    // جمع نتائج الاختبارات (JUnit) إن وُجدت
                     junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
                 }
             }
@@ -50,19 +47,19 @@ pipeline {
                 }
             }
         }
-
-        stage('Quality Gate') {
+        stage('Semgrep SAST Scan') {
             steps {
                 script {
-                    // كحل احتياطي لتفادي التعليق إذا تأخر SonarQube
-                    catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                        timeout(time: 5, unit: 'MINUTES') {
-                            waitForQualityGate abortPipeline: false
-                        }
-                    }
+                    sh '''
+                        docker run --rm -v $(pwd):/src returntocorp/semgrep semgrep scan \
+                        --config=p/ci \
+                        --json -o semgrep-report.json || true
+                    '''
+                    archiveArtifacts artifacts: 'semgrep-report.json', allowEmptyArchive: true
                 }
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -86,7 +83,6 @@ pipeline {
     post {
         always {
             sh 'docker logout || true'
-            // تنظيف مساحة العمل بعد كل بناء
             cleanWs(deleteDirs: true, notFailBuild: true)
         }
         success {
