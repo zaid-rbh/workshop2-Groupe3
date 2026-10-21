@@ -47,15 +47,21 @@ public class ProductService {
     }
 
     /**
-     * VULNERABILITY #1: SQL injection. The keyword is concatenated directly into a native SQL query.
-     * VULNERABILITY #2: SQL injection in ORDER BY. The "sort" value also comes straight from the request.
-     * A secure version would use a parameterized query and an allow-list for the sort column.
+     * Recherche sÃ©curisÃ©e : le mot-clÃ© est passÃ© en paramÃ¨tre (requÃªte paramÃ©trÃ©e)
+     * et le tri est limitÃ© Ã  une liste de colonnes autorisÃ©es (aucune concatÃ©nation SQL).
      */
     @SuppressWarnings("unchecked")
     public List<Product> search(String keyword, String sort) {
-        String sql = "SELECT * FROM products WHERE name LIKE '%" + keyword + "%' "
-                + "OR description LIKE '%" + keyword + "%' ORDER BY " + sort;
-        return entityManager.createNativeQuery(sql, Product.class).getResultList();
+        String safeKeyword = keyword == null ? "" : keyword;
+        String sql = switch (sort == null ? "" : sort) {
+            case "name" -> "SELECT * FROM products WHERE name LIKE :kw OR description LIKE :kw ORDER BY name";
+            case "price" -> "SELECT * FROM products WHERE name LIKE :kw OR description LIKE :kw ORDER BY price";
+            case "stock" -> "SELECT * FROM products WHERE name LIKE :kw OR description LIKE :kw ORDER BY stock";
+            default -> "SELECT * FROM products WHERE name LIKE :kw OR description LIKE :kw ORDER BY id";
+        };
+        return entityManager.createNativeQuery(sql, Product.class)
+                .setParameter("kw", "%" + safeKeyword + "%")
+                .getResultList();
     }
 
     public List<Review> getReviews(Long productId) {
