@@ -50,13 +50,18 @@ pipeline {
         stage('Semgrep SAST Scan') {
             steps {
                 script {
-                    sh '''
-                        docker run --rm -v $(pwd):/src returntocorp/semgrep semgrep scan \
+                    sh """
+                        docker run --rm \
+                        -v ${WORKSPACE}:/src \
+                        returntocorp/semgrep semgrep scan \
                         --config=p/ci \
                         --json -o /src/semgrep-report.json || true
-                    '''
-                    sh 'cat semgrep-report.json || true'
+                    """
 
+                    // Affichage du rapport dans la console (facultatif mais utile)
+                    sh "cat semgrep-report.json || true"
+
+                    // Archivage du rapport dans Jenkins
                     archiveArtifacts artifacts: 'semgrep-report.json', allowEmptyArchive: true
                 }
             }
