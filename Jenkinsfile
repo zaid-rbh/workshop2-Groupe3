@@ -55,6 +55,8 @@ pipeline {
                         --config=p/ci \
                         --json -o /src/semgrep-report.json || true
                     '''
+                    sh 'cat semgrep-report.json || true'
+
                     archiveArtifacts artifacts: 'semgrep-report.json', allowEmptyArchive: true
                 }
             }
