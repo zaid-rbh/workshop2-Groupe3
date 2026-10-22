@@ -33,6 +33,21 @@ pipeline {
                 sh 'cat semgrep-report.txt'
             }
         }
+    
+    stage('OWASP Dependency-Check') {
+            steps {
+                withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
+                    sh '''
+                        mvn -B org.owasp:dependency-check-maven:check \
+                          -DnvdApiKey=$NVD_API_KEY \
+                          -DdataDirectory=/var/jenkins_home/dependency-check-data \
+                          -Dformats=HTML,JSON \
+                          -DfailBuildOnCVSS=11 \
+                          -DossindexAnalyzerEnabled=false
+                    '''
+                }
+            }
+        }
     }
 
     post {
