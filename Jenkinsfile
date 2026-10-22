@@ -42,7 +42,7 @@ pipeline {
                           -DnvdApiKey=$NVD_API_KEY \
                           -DdataDirectory=/var/jenkins_home/dependency-check-data \
                           -Dformats=HTML,JSON \
-                          -DfailBuildOnCVSS=11 \
+                          -DfailBuildOnCVSS=7 \
                           -DossindexAnalyzerEnabled=false
                     '''
                 }
